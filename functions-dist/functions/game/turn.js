@@ -34,17 +34,15 @@ async function generateAIResponse(gameState, playerInput, diceRoll, env) {
         { role: 'user', content: playerInput }
     ];
     try {
+        if (!env.AI) {
+            throw new Error('AI binding is not defined');
+        }
         const aiResponse = await env.AI.run('@cf/meta/llama-3-8b-instruct', { messages });
         return aiResponse.response || '';
     }
     catch (error) {
         console.error('Error in AI call:', error);
-        if (error instanceof Error) {
-            throw new Error(`AI call failed: ${error.message}`);
-        }
-        else {
-            throw new Error('AI call failed: Unknown error');
-        }
+        throw error;
     }
 }
 function updateContextWindow(gameState, playerInput, aiResponse) {
@@ -54,6 +52,9 @@ function updateContextWindow(gameState, playerInput, aiResponse) {
     }
 }
 async function getGameState(env) {
+    if (!env.GAME_STATE) {
+        throw new Error('GAME_STATE binding is not defined');
+    }
     try {
         const storedState = await env.GAME_STATE.get('gameState');
         if (storedState) {
@@ -71,11 +72,15 @@ async function getGameState(env) {
     };
 }
 async function saveGameState(env, gameState) {
+    if (!env.GAME_STATE) {
+        throw new Error('GAME_STATE binding is not defined');
+    }
     try {
         await env.GAME_STATE.put('gameState', JSON.stringify(gameState));
     }
     catch (error) {
         console.error('Error saving game state:', error);
+        throw error;
     }
 }
 async function processGameTurn(playerInput, env) {
@@ -94,7 +99,6 @@ async function processGameTurn(playerInput, env) {
     return {
         response: aiResponse,
         diceRoll,
-        playerInput: playerInput,
         gameState: {
             health: gameState.health,
             inventory: gameState.inventory,
@@ -103,7 +107,7 @@ async function processGameTurn(playerInput, env) {
     };
 }
 export const onRequestGet = async (context) => {
-    return new Response("Hello, World!");
+    return new Response("Welcome to the Dungeon Game!");
 };
 export const onRequestPost = async (context) => {
     console.log('Received request to /game/turn');

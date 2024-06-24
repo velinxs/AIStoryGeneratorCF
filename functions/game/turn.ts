@@ -1,3 +1,10 @@
+interface Env {
+  AI?: {
+    run: (model: string, options: any) => Promise<any>;
+  };
+  GAME_STATE?: KVNamespace;
+}
+
 interface GameState {
   health: number;
   inventory: string[];
@@ -10,8 +17,6 @@ const MAX_CONTEXT_LENGTH = 10;
 function rollDice(max: number = 100): number {
   return Math.floor(Math.random() * max) + 1;
 }
-
-
 
 function generateSystemPrompt(gameState: GameState, diceRoll: number): string {
   return `
@@ -38,7 +43,7 @@ function generateSystemPrompt(gameState: GameState, diceRoll: number): string {
   `;
 }
 
-async function generateAIResponse(gameState: GameState, playerInput: string, diceRoll: number, env: any) {
+async function generateAIResponse(gameState: GameState, playerInput: string, diceRoll: number, env: Env) {
   const systemPrompt = generateSystemPrompt(gameState, diceRoll);
   const messages = [
     { role: 'system', content: systemPrompt },
@@ -46,15 +51,14 @@ async function generateAIResponse(gameState: GameState, playerInput: string, dic
     { role: 'user', content: playerInput }
   ];
   try {
+    if (!env.AI) {
+      throw new Error('AI binding is not defined');
+    }
     const aiResponse = await env.AI.run('@cf/meta/llama-3-8b-instruct', { messages });
     return aiResponse.response || '';
   } catch (error) {
     console.error('Error in AI call:', error);
-    if (error instanceof Error) {
-      throw new Error(`AI call failed: ${error.message}`);
-    } else {
-      throw new Error('AI call failed: Unknown error');
-    }
+    throw error;
   }
 }
 
@@ -69,7 +73,10 @@ function updateContextWindow(gameState: GameState, playerInput: string, aiRespon
   }
 }
 
-async function getGameState(env: any): Promise<GameState> {
+async function getGameState(env: Env): Promise<GameState> {
+  if (!env.GAME_STATE) {
+    throw new Error('GAME_STATE binding is not defined');
+  }
   try {
     const storedState = await env.GAME_STATE.get('gameState');
     if (storedState) {
@@ -86,15 +93,19 @@ async function getGameState(env: any): Promise<GameState> {
   };
 }
 
-async function saveGameState(env: any, gameState: GameState): Promise<void> {
+async function saveGameState(env: Env, gameState: GameState): Promise<void> {
+  if (!env.GAME_STATE) {
+    throw new Error('GAME_STATE binding is not defined');
+  }
   try {
     await env.GAME_STATE.put('gameState', JSON.stringify(gameState));
   } catch (error) {
     console.error('Error saving game state:', error);
+    throw error;
   }
 }
 
-async function processGameTurn(playerInput: string, env: any) {
+async function processGameTurn(playerInput: string, env: Env) {
   console.log('Starting processGameTurn');
   let gameState = await getGameState(env);
   console.log('Retrieved game state:', gameState);
@@ -113,7 +124,6 @@ async function processGameTurn(playerInput: string, env: any) {
   return {
     response: aiResponse,
     diceRoll,
-	playerInput: playerInput,
     gameState: {
       health: gameState.health,
       inventory: gameState.inventory,
@@ -123,16 +133,12 @@ async function processGameTurn(playerInput: string, env: any) {
 }
 
 export const onRequestGet: PagesFunction = async (context) => {
-  return new Response("Hello, World!");
+  return new Response("Welcome to the Dungeon Game!");
 };
 
-export const onRequestPost: PagesFunction = async (context) => {
+export const onRequestPost: PagesFunction<Env> = async (context) => {
   console.log('Received request to /game/turn');
   try {
-    if (!context.env.AI) {
-      throw new Error('AI binding is not defined');
-    }
-
     const data = await context.request.json() as any;
     const playerInput = data.playerInput;
 
