@@ -1,7 +1,3 @@
-import { Hono } from 'hono';
-
-const app = new Hono();
-
 interface GameState {
   health: number;
   inventory: string[];
@@ -14,6 +10,8 @@ const MAX_CONTEXT_LENGTH = 10;
 function rollDice(max: number = 100): number {
   return Math.floor(Math.random() * max) + 1;
 }
+
+
 
 function generateSystemPrompt(gameState: GameState, diceRoll: number): string {
   return `
@@ -52,7 +50,11 @@ async function generateAIResponse(gameState: GameState, playerInput: string, dic
     return aiResponse.response || '';
   } catch (error) {
     console.error('Error in AI call:', error);
-    throw new Error(`AI call failed: ${error.message}`);
+    if (error instanceof Error) {
+      throw new Error(`AI call failed: ${error.message}`);
+    } else {
+      throw new Error('AI call failed: Unknown error');
+    }
   }
 }
 
@@ -111,6 +113,7 @@ async function processGameTurn(playerInput: string, env: any) {
   return {
     response: aiResponse,
     diceRoll,
+	playerInput: playerInput,
     gameState: {
       health: gameState.health,
       inventory: gameState.inventory,
@@ -118,22 +121,37 @@ async function processGameTurn(playerInput: string, env: any) {
     }
   };
 }
-app.get('/test', (c) => c.text('Hello, World!'));
 
-app.post('/game/turn', async (c) => {
+export const onRequestGet: PagesFunction = async (context) => {
+  return new Response("Hello, World!");
+};
+
+export const onRequestPost: PagesFunction = async (context) => {
   console.log('Received request to /game/turn');
   try {
-    const { playerInput } = await c.req.json();
-    console.log('Parsed player input:', playerInput);
-    const result = await processGameTurn(playerInput, c.env);
-    console.log('Processed game turn, result:', result);
-    return c.json(result);
-   } catch (error) {
-    console.error('Error in /game/turn:', error);
-    return c.json({ error: error.message }, 500);
-  }
-});
+    if (!context.env.AI) {
+      throw new Error('AI binding is not defined');
+    }
 
-export default {
-  fetch: app.fetch,
+    const data = await context.request.json() as any;
+    const playerInput = data.playerInput;
+
+    if (typeof playerInput !== 'string') {
+      throw new Error('Invalid input: playerInput must be a string');
+    }
+
+    console.log('Parsed player input:', playerInput);
+    const result = await processGameTurn(playerInput, context.env);
+    console.log('Processed game turn, result:', result);
+    return new Response(JSON.stringify(result), {
+      headers: { 'Content-Type': 'application/json' }
+    });
+  } catch (error) {
+    console.error('Error in /game/turn:', error);
+    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+    return new Response(JSON.stringify({ error: errorMessage }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
 };

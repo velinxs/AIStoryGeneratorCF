@@ -1,12 +1,13 @@
-#:schema node_modules/wrangler/config-schema.json
-name = "dungen-game2"
-main = "functions/index.ts"
+name = "dungeon-gamev3"
 compatibility_date = "2024-06-20"
 compatibility_flags = ["nodejs_compat"]
+main = "functions-dist/game/[[path]].js"
+
+[build]
+command = "npm run build"
 
 [ai]
 binding = "AI"
-
 
 [[kv_namespaces]]
 binding = "GAME_STATE"
@@ -15,4 +16,5 @@ id = "e5cb121461664c04b66b64bcea54685f"
 [site]
 bucket = "./public"
 
-pages_build_output_dir = "./public"
+# This tells Wrangler to use the compiled JavaScript files
+

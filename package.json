@@ -3,22 +3,17 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "deploy": "wrangler deploy",
-    "dev": "wrangler dev",
-    "start": "wrangler dev",
-    "test": "vitest",
-    "cf-typegen": "wrangler types"
+    "build": "tsc",
+    "dev": "npm run build && wrangler pages dev functions-dist --binding GAME_STATE=e5cb121461664c04b66b64bcea54685f --binding AI --compatibility-date=2024-06-20",
+    "deploy": "npm run build && wrangler pages deploy public",
+    "type-check": "tsc --noEmit"
   },
   "devDependencies": {
-    "@cloudflare/vitest-pool-workers": "^0.4.5",
     "@cloudflare/workers-types": "^4.20240620.0",
-    "typescript": "^5.4.5",
-    "vitest": "1.5.0",
-    "wrangler": "^3.60.3"
+    "typescript": "^5.1.6",
+    "wrangler": "^3.61.0"
   },
   "dependencies": {
-    "@hono/node-server": "^1.11.4",
-    "cloudflare": "^3.4.0",
     "hono": "^4.4.7"
   }
 }
