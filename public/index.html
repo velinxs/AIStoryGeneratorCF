@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dungeon Adventure</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="app">
+        <div class="header">
+            <h1>Dark Souls-inspired Dungeon Adventure</h1>
+        </div>
+        <div class="game-state">
+            <p id="health">Health: 100</p>
+            <p id="inventory">Inventory: None</p>
+            <p id="difficulty">Difficulty: Unforgiving</p>
+            <p id="lastRoll">Last Roll: -</p>
+        </div>
+        <div class="game-container">
+            <div class="story" id="story">
+                <p>Welcome to the Dungeon Adventure. Your journey begins here...</p>
+            </div>
+            <div class="input-container">
+                <input type="text" id="userInput" placeholder="Enter your action...">
+                <button id="submitBtn">Submit</button>
+            </div>
+        </div>
+    </div>
+    <script src="scripts.js"></script>
+</body>
+</html>

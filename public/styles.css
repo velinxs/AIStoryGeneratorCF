@@ -1,0 +1,124 @@
+body {
+    font-family: 'Courier New', monospace;
+    background-color: #1a1a1a;
+    color: #d4d4d4;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    padding: 20px;
+}
+
+#app {
+    width: 90%;
+    max-width: 800px;
+    padding: 20px;
+    border-radius: 8px;
+    background-color: #2a2a2a;
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
+}
+
+.header {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.header h1 {
+    color: #ffd700;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.game-state {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+    padding: 10px;
+    border: 1px solid #4a4a4a;
+    border-radius: 8px;
+    background-color: #333;
+}
+
+.game-state p {
+    margin: 5px;
+    font-size: 0.9em;
+}
+
+.game-container {
+    border: 1px solid #4a4a4a;
+    padding: 10px;
+    border-radius: 8px;
+    background-color: #2a2a2a;
+}
+
+.story {
+    height: 300px;
+    overflow-y: auto;
+    padding: 10px;
+    border: 1px solid #4a4a4a;
+    border-radius: 8px;
+    background-color: #222;
+    margin-bottom: 20px;
+    scroll-behavior: smooth;
+}
+
+.story p {
+    margin-bottom: 10px;
+    line-height: 1.4;
+}
+
+.story p strong {
+    color: #ffd700;
+}
+
+.input-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+input[type="text"] {
+    width: 80%;
+    padding: 10px;
+    border: 1px solid #4a4a4a;
+    border-radius: 4px;
+    background: #333;
+    color: #d4d4d4;
+    font-family: 'Courier New', monospace;
+}
+
+button {
+    width: 18%;
+    padding: 10px;
+    border: 1px solid #4a4a4a;
+    border-radius: 4px;
+    background: #4a4a4a;
+    color: #d4d4d4;
+    cursor: pointer;
+    transition: background 0.3s;
+    font-family: 'Courier New', monospace;
+}
+
+button:hover {
+    background: #5a5a5a;
+}
+
+@media (max-width: 600px) {
+    #app {
+        width: 100%;
+        padding: 10px;
+    }
+
+    .game-state {
+        flex-direction: column;
+    }
+
+    input[type="text"] {
+        width: 70%;
+    }
+
+    button {
+        width: 28%;
+    }
+}

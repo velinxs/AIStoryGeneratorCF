@@ -15,5 +15,10 @@
     "typescript": "^5.4.5",
     "vitest": "1.5.0",
     "wrangler": "^3.60.3"
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.11.4",
+    "cloudflare": "^3.4.0",
+    "hono": "^4.4.7"
   }
 }
