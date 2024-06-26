@@ -10,7 +10,7 @@ async function handleUserInput() {
     if (!userInput.trim()) return;
 
     try {
-        const response = await fetch('/api/game/turn', {
+        const response = await fetch('/game/turn', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ playerInput: userInput })
