@@ -1,10 +1,9 @@
 name = "dungeon-gamev3"
 compatibility_date = "2024-06-20"
 compatibility_flags = ["nodejs_compat"]
-main = "functions-dist/game/[[path]].js"
+pages_build_output_dir = "public"
+#account_id = "228ba5cfac397accddf678da1b6aa10d"
 
-[build]
-command = "npm run build"
 
 [ai]
 binding = "AI"
@@ -12,9 +11,3 @@ binding = "AI"
 [[kv_namespaces]]
 binding = "GAME_STATE"
 id = "e5cb121461664c04b66b64bcea54685f"
-
-[site]
-bucket = "./public"
-
-# This tells Wrangler to use the compiled JavaScript files
-

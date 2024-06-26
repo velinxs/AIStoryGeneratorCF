@@ -45,3 +45,4 @@ function appendToStory(userInput, aiResponse) {
     storyDiv.innerHTML += `<p><strong>Dungeon Master:</strong> ${aiResponse}</p>`;
     storyDiv.scrollTop = storyDiv.scrollHeight;
 }
+

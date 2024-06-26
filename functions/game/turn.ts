@@ -1,25 +1,11 @@
-interface Env {
-  AI?: {
-    run: (model: string, options: any) => Promise<any>;
-  };
-  GAME_STATE?: KVNamespace;
-}
-
-interface GameState {
-  health: number;
-  inventory: string[];
-  difficulty: string;
-  contextWindow: { role: string; content: string }[];
-}
-
 const MAX_CONTEXT_LENGTH = 10;
 
 function rollDice(max: number = 100): number {
-  return Math.floor(Math.random() * max) + 1;
+    return Math.floor(Math.random() * max) + 1;
 }
 
-function generateSystemPrompt(gameState: GameState, diceRoll: number): string {
-  return `
+function generateSystemPrompt(gameState: any, diceRoll: number): string {
+    return `
     You are the Dungeon Master AI, guiding the user through an immersive and challenging adventure inspired by Dark Souls 3. Your narrative should be eerie and convey a sense of gradual progression, always using a third-person perspective.
 
     Game Mechanics:
@@ -43,121 +29,112 @@ function generateSystemPrompt(gameState: GameState, diceRoll: number): string {
   `;
 }
 
-async function generateAIResponse(gameState: GameState, playerInput: string, diceRoll: number, env: Env) {
-  const systemPrompt = generateSystemPrompt(gameState, diceRoll);
-  const messages = [
-    { role: 'system', content: systemPrompt },
-    ...gameState.contextWindow,
-    { role: 'user', content: playerInput }
-  ];
-  try {
-    if (!env.AI) {
-      throw new Error('AI binding is not defined');
+async function generateAIResponse(gameState: any, playerInput: string, diceRoll: number, env: any): Promise<string> {
+    const systemPrompt = generateSystemPrompt(gameState, diceRoll);
+    const messages = [
+        { role: 'system', content: systemPrompt },
+        ...gameState.contextWindow,
+        { role: 'user', content: playerInput }
+    ];
+    try {
+        if (!env.AI) {
+            throw new Error('AI binding is not defined');
+        }
+        const aiResponse = await env.AI.run('@cf/meta/llama-3-8b-instruct', { messages });
+        return aiResponse.response || '';
+    } catch (error) {
+        console.error('Error in AI call:', error);
+        throw error;
     }
-    const aiResponse = await env.AI.run('@cf/meta/llama-3-8b-instruct', { messages });
-    return aiResponse.response || '';
-  } catch (error) {
-    console.error('Error in AI call:', error);
-    throw error;
-  }
 }
 
-function updateContextWindow(gameState: GameState, playerInput: string, aiResponse: string): void {
-  gameState.contextWindow.push(
-    { role: 'user', content: playerInput },
-    { role: 'assistant', content: aiResponse }
-  );
-
-  if (gameState.contextWindow.length > MAX_CONTEXT_LENGTH) {
-    gameState.contextWindow = gameState.contextWindow.slice(-MAX_CONTEXT_LENGTH);
-  }
-}
-
-async function getGameState(env: Env): Promise<GameState> {
-  if (!env.GAME_STATE) {
-    throw new Error('GAME_STATE binding is not defined');
-  }
-  try {
-    const storedState = await env.GAME_STATE.get('gameState');
-    if (storedState) {
-      return JSON.parse(storedState);
+function updateContextWindow(gameState: any, playerInput: string, aiResponse: string): void {
+    gameState.contextWindow.push({ role: 'user', content: playerInput }, { role: 'assistant', content: aiResponse });
+    if (gameState.contextWindow.length > MAX_CONTEXT_LENGTH) {
+        gameState.contextWindow = gameState.contextWindow.slice(-MAX_CONTEXT_LENGTH);
     }
-  } catch (error) {
-    console.error('Error retrieving game state:', error);
-  }
-  return {
-    health: 100,
-    inventory: [],
-    difficulty: 'Unforgiving',
-    contextWindow: []
-  };
 }
 
-async function saveGameState(env: Env, gameState: GameState): Promise<void> {
-  if (!env.GAME_STATE) {
-    throw new Error('GAME_STATE binding is not defined');
-  }
-  try {
-    await env.GAME_STATE.put('gameState', JSON.stringify(gameState));
-  } catch (error) {
-    console.error('Error saving game state:', error);
-    throw error;
-  }
-}
-
-async function processGameTurn(playerInput: string, env: Env) {
-  console.log('Starting processGameTurn');
-  let gameState = await getGameState(env);
-  console.log('Retrieved game state:', gameState);
-  const diceRoll = rollDice();
-  console.log('Rolled dice:', diceRoll);
-
-  console.log('Generating AI response...');
-  const aiResponse = await generateAIResponse(gameState, playerInput, diceRoll, env);
-  console.log('AI response generated');
-  updateContextWindow(gameState, playerInput, aiResponse);
-
-  console.log('Saving game state...');
-  await saveGameState(env, gameState);
-  console.log('Game state saved');
-
-  return {
-    response: aiResponse,
-    diceRoll,
-    gameState: {
-      health: gameState.health,
-      inventory: gameState.inventory,
-      difficulty: gameState.difficulty
+async function getGameState(env: any): Promise<any> {
+    if (!env.GAME_STATE) {
+        throw new Error('GAME_STATE binding is not defined');
     }
-  };
+    try {
+        const storedState = await env.GAME_STATE.get('gameState');
+        if (storedState) {
+            return JSON.parse(storedState);
+        }
+    } catch (error) {
+        console.error('Error retrieving game state:', error);
+    }
+    return {
+        health: 100,
+        inventory: [],
+        difficulty: 'Unforgiving',
+        contextWindow: []
+    };
 }
 
-export const onRequestGet: PagesFunction = async (context) => {
-  return new Response("Welcome to the Dungeon Game!");
+async function saveGameState(env: any, gameState: any): Promise<void> {
+    if (!env.GAME_STATE) {
+        throw new Error('GAME_STATE binding is not defined');
+    }
+    try {
+        await env.GAME_STATE.put('gameState', JSON.stringify(gameState));
+    } catch (error) {
+        console.error('Error saving game state:', error);
+        throw error;
+    }
+}
+
+async function processGameTurn(playerInput: string, env: any): Promise<any> {
+    console.log('Starting processGameTurn');
+    let gameState = await getGameState(env);
+    console.log('Retrieved game state:', gameState);
+    const diceRoll = rollDice();
+    console.log('Rolled dice:', diceRoll);
+    console.log('Generating AI response...');
+    const aiResponse = await generateAIResponse(gameState, playerInput, diceRoll, env);
+    console.log('AI response generated');
+    updateContextWindow(gameState, playerInput, aiResponse);
+    console.log('Saving game state...');
+    await saveGameState(env, gameState);
+    console.log('Game state saved');
+    return {
+        response: aiResponse,
+        diceRoll,
+        gameState: {
+            health: gameState.health,
+            inventory: gameState.inventory,
+            difficulty: gameState.difficulty
+        }
+    };
+}
+
+export const onRequestGet = async (context: any): Promise<Response> => {
+    return new Response("Welcome to the Dungeon Game!");
 };
 
-export const onRequestPost: PagesFunction<Env> = async (context) => {
-  console.log('Received request to /game/turn');
-  try {
-    const data = await context.request.json() as any;
-    const playerInput = data.playerInput;
-
-    if (typeof playerInput !== 'string') {
-      throw new Error('Invalid input: playerInput must be a string');
+export const onRequestPost = async (context: any): Promise<Response> => {
+    console.log('Received request to /game/turn');
+    try {
+        const data = await context.request.json();
+        const playerInput = data.playerInput;
+        if (typeof playerInput !== 'string') {
+            throw new Error('Invalid input: playerInput must be a string');
+        }
+        console.log('Parsed player input:', playerInput);
+        const result = await processGameTurn(playerInput, context.env);
+        console.log('Processed game turn, result:', result);
+        return new Response(JSON.stringify(result), {
+            headers: { 'Content-Type': 'application/json' }
+        });
+    } catch (error) {
+        console.error('Error in /game/turn:', error);
+        const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+        return new Response(JSON.stringify({ error: errorMessage }), {
+            status: 400,
+            headers: { 'Content-Type': 'application/json' }
+        });
     }
-
-    console.log('Parsed player input:', playerInput);
-    const result = await processGameTurn(playerInput, context.env);
-    console.log('Processed game turn, result:', result);
-    return new Response(JSON.stringify(result), {
-      headers: { 'Content-Type': 'application/json' }
-    });
-  } catch (error) {
-    console.error('Error in /game/turn:', error);
-    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
-    return new Response(JSON.stringify({ error: errorMessage }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json' }
-    });
-  }
 };
