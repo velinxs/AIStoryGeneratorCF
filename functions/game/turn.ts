@@ -1,4 +1,4 @@
-const MAX_CONTEXT_LENGTH = 10;
+const MAX_CONTEXT_LENGTH = 20;
 
 function rollDice(max: number = 100): number {
     return Math.floor(Math.random() * max) + 1;
