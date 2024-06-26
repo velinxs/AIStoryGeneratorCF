@@ -1,24 +1,10 @@
-interface Env {
-    AI?: {
-        run: (model: string, options: any) => Promise<any>;
-    };
-    GAME_STATE?: KVNamespace;
-}
-
-interface GameState {
-    health: number;
-    inventory: string[];
-    difficulty: string;
-    contextWindow: { role: string; content: string }[];
-}
-
 const MAX_CONTEXT_LENGTH = 20;
 
 function rollDice(max: number = 100): number {
     return Math.floor(Math.random() * max) + 1;
 }
 
-function generateSystemPrompt(gameState: GameState, diceRoll: number): string {
+function generateSystemPrompt(gameState: any, diceRoll: number): string {
     return `
     You are the Dungeon Master AI, guiding the user through an immersive and challenging adventure inspired by Dark Souls 3. Your narrative should be eerie and convey a sense of gradual progression, always using a third-person perspective.
 
@@ -39,14 +25,14 @@ function generateSystemPrompt(gameState: GameState, diceRoll: number): string {
     - Reflect the user's death if their health reaches 0.
     - Integrate significant events (e.g., finding items, facing challenges, encountering NPCs and enemies) into the story.
     - Keep responses concise to maintain pacing and engagement.
-    - Always stay true to the dice rolls, you may ignore the user's influence on the story if necessary to maintain the integrity of the game and game state.
-    - You enjoy tormenting the user by guiding them through the adventure, keeping it challenging and immersive.
-    - Never break character or speak directly to the user. Always be roleplaying; you are an invisible narrator.
-    - Check the user's response, and if the user is trying to deceive or manipulate the game state or compromise the game mechanics, punish the user!
+    - Always stay true to the dice rolls, you may ignore the users influence on the Story if necessary to maintain the integrity of the game and game_state.
+    - You Enjoy tormenting the user by guiding them through the adventure, keeping it challenging and immersive.
+    - Never Break Character or Speak direct to User. Always be Roleplaying, you are invisible narrator.
+    - Check the users response and if user is trying to deceive or manipulate the GAME_STATE or compromise the game mechanics, punish the user!
   `;
 }
 
-async function generateAIResponse(gameState: GameState, playerInput: string, diceRoll: number, env: Env): Promise<string> {
+async function generateAIResponse(gameState: any, playerInput: string, diceRoll: number, env: any): Promise<string> {
     const systemPrompt = generateSystemPrompt(gameState, diceRoll);
     const messages = [
         { role: 'system', content: systemPrompt },
@@ -65,19 +51,19 @@ async function generateAIResponse(gameState: GameState, playerInput: string, dic
     }
 }
 
-function updateContextWindow(gameState: GameState, playerInput: string, aiResponse: string): void {
+function updateContextWindow(gameState: any, playerInput: string, aiResponse: string): void {
     gameState.contextWindow.push({ role: 'user', content: playerInput }, { role: 'assistant', content: aiResponse });
     if (gameState.contextWindow.length > MAX_CONTEXT_LENGTH) {
         gameState.contextWindow = gameState.contextWindow.slice(-MAX_CONTEXT_LENGTH);
     }
 }
 
-async function getGameState(env: Env, sessionId: string): Promise<GameState> {
+async function getGameState(env: any): Promise<any> {
     if (!env.GAME_STATE) {
         throw new Error('GAME_STATE binding is not defined');
     }
     try {
-        const storedState = await env.GAME_STATE.get(sessionId);
+        const storedState = await env.GAME_STATE.get('gameState');
         if (storedState) {
             return JSON.parse(storedState);
         }
@@ -92,21 +78,21 @@ async function getGameState(env: Env, sessionId: string): Promise<GameState> {
     };
 }
 
-async function saveGameState(env: Env, gameState: GameState, sessionId: string): Promise<void> {
+async function saveGameState(env: any, gameState: any): Promise<void> {
     if (!env.GAME_STATE) {
         throw new Error('GAME_STATE binding is not defined');
     }
     try {
-        await env.GAME_STATE.put(sessionId, JSON.stringify(gameState));
+        await env.GAME_STATE.put('gameState', JSON.stringify(gameState));
     } catch (error) {
         console.error('Error saving game state:', error);
         throw error;
     }
 }
 
-async function processGameTurn(playerInput: string, env: Env, sessionId: string): Promise<any> {
+async function processGameTurn(playerInput: string, env: any): Promise<any> {
     console.log('Starting processGameTurn');
-    let gameState = await getGameState(env, sessionId);
+    let gameState = await getGameState(env);
     console.log('Retrieved game state:', gameState);
     const diceRoll = rollDice();
     console.log('Rolled dice:', diceRoll);
@@ -115,7 +101,7 @@ async function processGameTurn(playerInput: string, env: Env, sessionId: string)
     console.log('AI response generated');
     updateContextWindow(gameState, playerInput, aiResponse);
     console.log('Saving game state...');
-    await saveGameState(env, gameState, sessionId);
+    await saveGameState(env, gameState);
     console.log('Game state saved');
     return {
         response: aiResponse,
@@ -128,20 +114,20 @@ async function processGameTurn(playerInput: string, env: Env, sessionId: string)
     };
 }
 
+export const onRequestGet = async (context: any): Promise<Response> => {
+    return new Response("Welcome to the Dungeon Game!");
+};
+
 export const onRequestPost = async (context: any): Promise<Response> => {
     console.log('Received request to /game/turn');
     try {
-        const sessionId = context.request.headers.get('Session-ID');
-        if (!sessionId) {
-            throw new Error('Session-ID header is missing');
-        }
         const data = await context.request.json();
         const playerInput = data.playerInput;
         if (typeof playerInput !== 'string') {
             throw new Error('Invalid input: playerInput must be a string');
         }
         console.log('Parsed player input:', playerInput);
-        const result = await processGameTurn(playerInput, context.env, sessionId);
+        const result = await processGameTurn(playerInput, context.env);
         console.log('Processed game turn, result:', result);
         return new Response(JSON.stringify(result), {
             headers: { 'Content-Type': 'application/json' }

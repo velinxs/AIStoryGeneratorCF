@@ -5,14 +5,29 @@ document.getElementById('userInput').addEventListener('keypress', function(e) {
     }
 });
 
+// Generate or retrieve a unique session ID
+function getSessionId() {
+    let sessionId = document.cookie.split('; ').find(row => row.startsWith('sessionId='));
+    if (!sessionId) {
+        sessionId = 'sessionId=' + Math.random().toString(36).substr(2, 9);
+        document.cookie = sessionId;
+    }
+    return sessionId.split('=')[1];
+}
+
 async function handleUserInput() {
     const userInput = document.getElementById('userInput').value;
     if (!userInput.trim()) return;
 
+    const sessionId = getSessionId();
+
     try {
         const response = await fetch('/game/turn', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+                'Session-ID': sessionId
+            },
             body: JSON.stringify({ playerInput: userInput })
         });
 
@@ -45,4 +60,3 @@ function appendToStory(userInput, aiResponse) {
     storyDiv.innerHTML += `<p><strong>Dungeon Master:</strong> ${aiResponse}</p>`;
     storyDiv.scrollTop = storyDiv.scrollHeight;
 }
-
